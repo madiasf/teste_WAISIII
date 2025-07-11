@@ -1,381 +1,101 @@
-import React, { useState, useEffect } from 'react';
-import { Brain, Clock, CheckCircle, XCircle, BarChart3, AlertTriangle } from 'lucide-react';
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 
-const CognitiveAssessmentDemo = () => {
-  const [currentTest, setCurrentTest] = useState(0);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(60);
-  const [isActive, setIsActive] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-  const [testStarted, setTestStarted] = useState(false);
+const questions = [
+  {
+    id: 1,
+    category: "Compreensão Verbal",
+    question: "O que significa ‘ambíguo’?",
+    options: [
+      "Claro e direto",
+      "Com dois sentidos",
+      "Errado",
+      "Rápido e breve"
+    ],
+    answer: 1
+  },
+  {
+    id: 2,
+    category: "Raciocínio Perceptual",
+    question: "Qual figura completa a sequência: ◻️◼️◻️ ?",
+    options: ["◼️", "◻️", "🔳", "⬛"],
+    answer: 0
+  },
+  {
+    id: 3,
+    category: "Memória de Trabalho",
+    question: "Repita os números: 3 - 8 - 1 - 6",
+    options: ["3-8-1-6", "6-1-8-3", "1-3-6-8", "3-1-6-8"],
+    answer: 0
+  },
+  {
+    id: 4,
+    category: "Velocidade de Processamento",
+    question: "Qual símbolo está repetido?  ⬤ ◯ ⬤ ○",
+    options: ["⬤", "◯", "○", "Todos"],
+    answer: 0
+  }
+];
 
-  // Simulação de subtestes baseados na estrutura WAIS-III
-  const subtests = [
-    {
-      name: "Raciocínio Lógico",
-      description: "Sequências numéricas e padrões",
-      timeLimit: 60,
-      questions: [
-        {
-          question: "Qual é o próximo número na sequência: 2, 4, 8, 16, ?",
-          options: ["24", "32", "30", "20"],
-          correct: 1
-        },
-        {
-          question: "Complete a sequência: 1, 1, 2, 3, 5, 8, ?",
-          options: ["11", "13", "15", "10"],
-          correct: 1
-        },
-        {
-          question: "Se A = 1, B = 2, C = 3, quanto vale a palavra 'BAC'?",
-          options: ["6", "7", "8", "5"],
-          correct: 0
-        }
-      ]
-    },
-    {
-      name: "Memória de Trabalho",
-      description: "Retenção e manipulação de informações",
-      timeLimit: 45,
-      questions: [
-        {
-          question: "Memorize: 7, 3, 9, 1, 5. Agora, em ordem crescente:",
-          options: ["1, 3, 5, 7, 9", "7, 3, 9, 1, 5", "9, 7, 5, 3, 1", "1, 5, 3, 7, 9"],
-          correct: 0
-        },
-        {
-          question: "Inverta mentalmente: ROMA. Qual é a palavra?",
-          options: ["AMOR", "MARO", "ARMO", "OMAR"],
-          correct: 0
-        },
-        {
-          question: "Some mentalmente: 15 + 27 - 8 + 4 = ?",
-          options: ["38", "36", "40", "34"],
-          correct: 0
-        }
-      ]
-    },
-    {
-      name: "Processamento Visual",
-      description: "Análise de padrões visuais",
-      timeLimit: 90,
-      questions: [
-        {
-          question: "Quantos triângulos você vê nesta figura? ◢◣◤◥",
-          options: ["4", "6", "8", "5"],
-          correct: 0
-        },
-        {
-          question: "Qual forma completa o padrão: ○□○□○?",
-          options: ["○", "□", "△", "◇"],
-          correct: 1
-        },
-        {
-          question: "Rotacione mentalmente ⟲. Como ficaria?",
-          options: ["⟳", "⟲", "↻", "↺"],
-          correct: 0
-        }
-      ]
+export default function WaisSimulator() {
+  const [step, setStep] = useState(0);
+  const [score, setScore] = useState(0);
+  const [name, setName] = useState("");
+
+  const handleAnswer = (index) => {
+    if (index === questions[step].answer) {
+      setScore(score + 1);
     }
-  ];
-
-  const currentSubtest = subtests[currentTest];
-  const currentQ = currentSubtest?.questions[currentQuestion];
-
-  useEffect(() => {
-    let interval = null;
-    if (isActive && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft(time => time - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      handleTimeout();
-    }
-    return () => clearInterval(interval);
-  }, [isActive, timeLeft]);
-
-  const startTest = () => {
-    setTestStarted(true);
-    setIsActive(true);
-    setTimeLeft(currentSubtest.timeLimit);
+    setStep(step + 1);
   };
 
-  const handleAnswer = (answerIndex) => {
-    const newAnswers = [...answers];
-    if (!newAnswers[currentTest]) newAnswers[currentTest] = [];
-    newAnswers[currentTest][currentQuestion] = answerIndex;
-    setAnswers(newAnswers);
-
-    if (currentQuestion < currentSubtest.questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      nextSubtest();
-    }
-  };
-
-  const nextSubtest = () => {
-    setIsActive(false);
-    if (currentTest < subtests.length - 1) {
-      setCurrentTest(currentTest + 1);
-      setCurrentQuestion(0);
-      setTestStarted(false);
-    } else {
-      calculateResults();
-    }
-  };
-
-  const handleTimeout = () => {
-    setIsActive(false);
-    nextSubtest();
-  };
-
-  const calculateResults = () => {
-    let totalCorrect = 0;
-    let totalQuestions = 0;
-
-    subtests.forEach((subtest, testIndex) => {
-      subtest.questions.forEach((question, qIndex) => {
-        totalQuestions++;
-        if (answers[testIndex] && answers[testIndex][qIndex] === question.correct) {
-          totalCorrect++;
-        }
-      });
-    });
-
-    const percentage = (totalCorrect / totalQuestions) * 100;
-    
-    // Simulação muito simplificada de estimativa de QI
-    // NOTA: Isso NÃO é um QI real!
-    let estimatedIQ = 85 + (percentage * 0.3);
-    if (estimatedIQ > 145) estimatedIQ = 145;
-    if (estimatedIQ < 70) estimatedIQ = 70;
-
-    setShowResults({ totalCorrect, totalQuestions, percentage, estimatedIQ: Math.round(estimatedIQ) });
-  };
-
-  const resetTest = () => {
-    setCurrentTest(0);
-    setCurrentQuestion(0);
-    setAnswers([]);
-    setTimeLeft(60);
-    setIsActive(false);
-    setShowResults(false);
-    setTestStarted(false);
-  };
-
-  const getIQInterpretation = (iq) => {
-    if (iq >= 130) return { label: "Muito Superior", color: "text-purple-600" };
-    if (iq >= 120) return { label: "Superior", color: "text-blue-600" };
-    if (iq >= 110) return { label: "Média Superior", color: "text-green-600" };
-    if (iq >= 90) return { label: "Média", color: "text-yellow-600" };
-    if (iq >= 80) return { label: "Média Inferior", color: "text-orange-600" };
-    return { label: "Limítrofe", color: "text-red-600" };
-  };
-
-  if (showResults) {
-    const interpretation = getIQInterpretation(showResults.estimatedIQ);
+  if (step >= questions.length) {
+    const percentage = Math.round((score / questions.length) * 100);
     return (
-      <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <BarChart3 className="w-8 h-8 text-blue-600 mr-2" />
-            <h2 className="text-2xl font-bold text-gray-800">Resultados da Avaliação</h2>
-          </div>
-          
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-center mb-2">
-              <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
-              <span className="font-semibold text-red-800">IMPORTANTE - AVISO ÉTICO</span>
-            </div>
-            <p className="text-red-700 text-sm">
-              Este é apenas um simulador educativo. NÃO substitui uma avaliação profissional.
-              Para uma avaliação real de QI, procure um psicólogo qualificado.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4">Desempenho Geral</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span>Acertos:</span>
-                <span className="font-semibold">{showResults.totalCorrect}/{showResults.totalQuestions}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Percentual:</span>
-                <span className="font-semibold">{showResults.percentage.toFixed(1)}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Estimativa demonstrativa:</span>
-                <span className={`font-bold ${interpretation.color}`}>
-                  {showResults.estimatedIQ}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Classificação:</span>
-                <span className={`font-semibold ${interpretation.color}`}>
-                  {interpretation.label}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-blue-50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4">Desempenho por Área</h3>
-            <div className="space-y-3">
-              {subtests.map((subtest, index) => {
-                const subtestAnswers = answers[index] || [];
-                const correct = subtest.questions.filter((q, qIndex) => 
-                  subtestAnswers[qIndex] === q.correct
-                ).length;
-                const percentage = (correct / subtest.questions.length) * 100;
-                
-                return (
-                  <div key={index} className="flex justify-between items-center">
-                    <span className="text-sm">{subtest.name}:</span>
-                    <div className="flex items-center">
-                      <span className="text-sm font-semibold mr-2">
-                        {correct}/{subtest.questions.length}
-                      </span>
-                      <div className="w-16 h-2 bg-gray-200 rounded-full">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h3 className="font-semibold text-yellow-800 mb-2">Limitações desta Simulação:</h3>
-          <ul className="text-sm text-yellow-700 space-y-1">
-            <li>• Número muito reduzido de itens</li>
-            <li>• Não padronizado ou validado</li>
-            <li>• Não considera normas por idade/escolaridade</li>
-            <li>• Ambiente não controlado</li>
-            <li>• Apenas para fins educativos</li>
-          </ul>
-        </div>
-
-        <div className="text-center mt-8">
-          <button
-            onClick={resetTest}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Fazer Novo Teste
-          </button>
-        </div>
+      <div className="max-w-xl mx-auto mt-10 p-4 text-center">
+        <h2 className="text-2xl font-bold mb-4">Resultado de {name}</h2>
+        <p className="text-lg mb-4">Pontuação: {score} de {questions.length}</p>
+        <p className="text-xl font-semibold">Estimativa de QI Simulado: {90 + score * 5}</p>
+        <Progress value={percentage} className="mt-4" />
       </div>
     );
   }
 
+  if (step === 0 && !name) {
+    return (
+      <div className="max-w-md mx-auto mt-10 p-4">
+        <h1 className="text-2xl font-bold mb-4">Simulador de QI - WAIS III (Didático)</h1>
+        <Input
+          placeholder="Digite seu nome"
+          onChange={(e) => setName(e.target.value)}
+          className="mb-4"
+        />
+        <Button onClick={() => setStep(1)}>Começar</Button>
+      </div>
+    );
+  }
+
+  const current = questions[step];
+
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center mb-4">
-          <Brain className="w-8 h-8 text-blue-600 mr-2" />
-          <h1 className="text-3xl font-bold text-gray-800">Simulador de Avaliação Cognitiva</h1>
-        </div>
-        <p className="text-gray-600">Baseado em princípios da WAIS-III (Fins Educativos)</p>
-      </div>
-
-      {!testStarted ? (
-        <div className="text-center">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4">
-              Subteste: {currentSubtest.name}
-            </h2>
-            <p className="text-gray-700 mb-4">{currentSubtest.description}</p>
-            <div className="flex items-center justify-center mb-4">
-              <Clock className="w-5 h-5 text-gray-600 mr-2" />
-              <span>Tempo limite: {currentSubtest.timeLimit} segundos</span>
-            </div>
-            <p className="text-sm text-gray-600 mb-4">
-              {currentSubtest.questions.length} questões
-            </p>
+    <div className="max-w-xl mx-auto mt-10 p-4">
+      <Card>
+        <CardContent className="p-6">
+          <h2 className="text-xl font-semibold mb-2">{current.category}</h2>
+          <p className="text-lg mb-4">{current.question}</p>
+          <div className="space-y-2">
+            {current.options.map((opt, idx) => (
+              <Button key={idx} variant="outline" className="w-full" onClick={() => handleAnswer(idx)}>
+                {opt}
+              </Button>
+            ))}
           </div>
-          
-          <button
-            onClick={startTest}
-            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors text-lg font-semibold"
-          >
-            Iniciar Subteste
-          </button>
-        </div>
-      ) : (
-        <div>
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center">
-              <span className="text-sm font-semibold text-gray-600">
-                Subteste {currentTest + 1}/3: {currentSubtest.name}
-              </span>
-            </div>
-            <div className="flex items-center">
-              <Clock className="w-4 h-4 text-red-600 mr-1" />
-              <span className={`font-bold ${timeLeft <= 10 ? 'text-red-600' : 'text-gray-600'}`}>
-                {timeLeft}s
-              </span>
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <div className="flex justify-between text-sm text-gray-600 mb-2">
-              <span>Questão {currentQuestion + 1} de {currentSubtest.questions.length}</span>
-              <span>{Math.round(((currentQuestion) / currentSubtest.questions.length) * 100)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${((currentQuestion) / currentSubtest.questions.length) * 100}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="bg-gray-50 p-6 rounded-lg mb-6">
-            <h3 className="text-lg font-semibold mb-4">{currentQ.question}</h3>
-            <div className="grid gap-3">
-              {currentQ.options.map((option, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleAnswer(index)}
-                  className="text-left p-4 bg-white border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                >
-                  <span className="font-semibold text-blue-600 mr-3">
-                    {String.fromCharCode(65 + index)}.
-                  </span>
-                  {option}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Progresso geral: {currentTest + 1}/3 subtestes
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="mt-8 bg-red-50 border border-red-200 rounded-lg p-4">
-        <div className="flex items-center mb-2">
-          <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
-          <span className="font-semibold text-red-800">Aviso Importante</span>
-        </div>
-        <p className="text-sm text-red-700">
-          Esta aplicação é apenas para fins educativos e demonstrativos. 
-          NÃO substitui uma avaliação psicológica profissional realizada por psicólogo habilitado.
-        </p>
-      </div>
+          <Progress value={(step / questions.length) * 100} className="mt-4" />
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default CognitiveAssessmentDemo;
+}
